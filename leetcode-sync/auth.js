@@ -3,7 +3,7 @@
 
 class GitHubAuth {
   constructor() {
-    this.clientId = "Ov23liMHbYsE41uijTgi";
+    this.clientId = "Ov23liF5VVlXCN41NE79";
     this.deviceCodeUrl = "https://github.com/login/device/code";
     this.tokenUrl = "https://github.com/login/oauth/access_token";
   }
@@ -27,7 +27,7 @@ class GitHubAuth {
           "Accept": "application/json",
           "Content-Type": "application/x-www-form-urlencoded"
         },
-        body: `client_id=${this.clientId}&scope=user:email`
+        body: `client_id=${this.clientId}&scope=public_repo`
       });
 
       if (!response.ok) {

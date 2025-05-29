@@ -46,6 +46,9 @@ class BackgroundAuth {
           if (userResponse.ok) {
             const userInfo = await userResponse.json();
             
+            // Auto-create leetcode-sync repository
+            await this.createLeetCodeRepository(data.access_token, userInfo.login);
+            
             // Save authentication
             await chrome.storage.sync.set({
               github_token: data.access_token,
@@ -99,6 +102,60 @@ class BackgroundAuth {
     }).catch(() => {
       // Popup might be closed, that's OK
     });
+  }
+
+  async createLeetCodeRepository(token, username) {
+    const repoName = "leetcode-sync";
+    const repoUrl = `https://api.github.com/repos/${username}/${repoName}`;
+    
+    try {
+      // Check if repository already exists
+      const checkResponse = await fetch(repoUrl, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "User-Agent": "DotPush-Extension"
+        }
+      });
+      
+      if (checkResponse.ok) {
+        console.log("Repository already exists");
+        return true;
+      }
+      
+      if (checkResponse.status === 404) {
+        console.log("Creating leetcode-sync repository...");
+        
+        const createResponse = await fetch("https://api.github.com/user/repos", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+            "User-Agent": "DotPush-Extension"
+          },
+          body: JSON.stringify({
+            name: repoName,
+            description: "LeetCode solutions automatically synced from DotPush extension",
+            private: false,
+            auto_init: true
+          })
+        });
+        
+        if (createResponse.ok) {
+          console.log("✅ Repository created successfully!");
+          return true;
+        } else {
+          const errorData = await createResponse.json();
+          console.error("❌ Failed to create repository:", errorData);
+          return false;
+        }
+      }
+      
+      console.error("Unexpected response:", checkResponse.status);
+      return false;
+    } catch (error) {
+      console.error("❌ Error checking/creating repository:", error);
+      return false;
+    }
   }
 }
 
