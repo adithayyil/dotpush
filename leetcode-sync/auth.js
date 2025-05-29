@@ -27,7 +27,6 @@ class GitHubAuth {
       });
       
       if (!hasPermissions) {
-        console.log("Requesting GitHub permissions...");
         const granted = await chrome.permissions.request({
           origins: ["https://github.com/*"]
         });
@@ -37,7 +36,6 @@ class GitHubAuth {
         }
       }
     } catch (permError) {
-      console.warn("Permission check failed:", permError);
       // Continue anyway - might be in development mode
     }
 
@@ -53,7 +51,6 @@ class GitHubAuth {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error("GitHub API error:", errorText);
         throw new Error(`GitHub API error (${response.status}): ${errorText}`);
       }
 
@@ -77,7 +74,6 @@ class GitHubAuth {
         interval: data.interval
       };
     } catch (error) {
-      console.error("Error starting device flow:", error);
       throw error;
     }
   }
@@ -132,7 +128,6 @@ class GitHubAuth {
 
       return await response.json();
     } catch (error) {
-      console.error("Error getting user info:", error);
       throw error;
     }
   }

@@ -10,12 +10,10 @@ class BackgroundAuth {
   // Start polling for OAuth token in background
   async startPolling(deviceCode, clientId, interval = 5) {
     if (this.polling) {
-      console.log('Already polling, stopping previous poll');
       this.stopPolling();
     }
 
     this.polling = true;
-    console.log('Starting background polling for OAuth token');
 
     const poll = async () => {
       if (!this.polling) return;
@@ -33,7 +31,6 @@ class BackgroundAuth {
         const data = await response.json();
 
         if (data.access_token) {
-          console.log('✅ OAuth token received!');
           
           // Get user info
           const userResponse = await fetch("https://api.github.com/user", {
@@ -56,25 +53,19 @@ class BackgroundAuth {
               github_user_info: userInfo
             });
             
-            console.log(`✅ Authentication saved for user: ${userInfo.login}`);
-            
             // Notify popup if it's open
             this.notifyAuthComplete(data.access_token, userInfo);
           }
           
           this.stopPolling();
         } else if (data.error === "authorization_pending") {
-          console.log('⏳ Authorization pending...');
           this.pollInterval = setTimeout(poll, interval * 1000);
         } else if (data.error === "slow_down") {
-          console.log('🐌 Rate limited, slowing down...');
           this.pollInterval = setTimeout(poll, (interval + 5) * 1000);
         } else {
-          console.error('❌ OAuth error:', data.error);
           this.stopPolling();
         }
       } catch (error) {
-        console.error('❌ Polling error:', error);
         this.stopPolling();
       }
     };
@@ -89,7 +80,6 @@ class BackgroundAuth {
       clearTimeout(this.pollInterval);
       this.pollInterval = null;
     }
-    console.log('🛑 Stopped OAuth polling');
   }
 
   // Notify popup of completed authentication
@@ -118,12 +108,10 @@ class BackgroundAuth {
       });
       
       if (checkResponse.ok) {
-        console.log("Repository already exists");
         return true;
       }
       
       if (checkResponse.status === 404) {
-        console.log("Creating leetcode-sync repository...");
         
         const createResponse = await fetch("https://api.github.com/user/repos", {
           method: "POST",
@@ -141,19 +129,15 @@ class BackgroundAuth {
         });
         
         if (createResponse.ok) {
-          console.log("✅ Repository created successfully!");
           return true;
         } else {
           const errorData = await createResponse.json();
-          console.error("❌ Failed to create repository:", errorData);
           return false;
         }
       }
       
-      console.error("Unexpected response:", checkResponse.status);
       return false;
     } catch (error) {
-      console.error("❌ Error checking/creating repository:", error);
       return false;
     }
   }
@@ -165,17 +149,17 @@ const backgroundAuth = new BackgroundAuth();
 class IconManager {
   constructor() {
     this.activeIconPaths = {
-      "16": "icons/icon-16.png",
-      "32": "icons/icon-32.png", 
-      "48": "icons/icon-48.png",
-      "128": "icons/icon-128.png"
+      "16": "icons/dotpush-active-16.png",
+      "32": "icons/dotpush-active-32.png", 
+      "48": "icons/dotpush-active-48.png",
+      "128": "icons/dotpush-active-128.png"
     };
     
     this.inactiveIconPaths = {
-      "16": "icons/inactive-16.png",
-      "32": "icons/inactive-32.png",
-      "48": "icons/inactive-48.png", 
-      "128": "icons/inactive-128.png"
+      "16": "icons/dotpush-inactive-16.png",
+      "32": "icons/dotpush-inactive-32.png",
+      "48": "icons/dotpush-inactive-48.png", 
+      "128": "icons/dotpush-inactive-128.png"
     };
   }
 
@@ -196,10 +180,8 @@ class IconManager {
           "dotpush - Ready to sync!" : 
           "dotpush - Navigate to LeetCode"
       });
-      
-      console.log(`🎨 Icon updated: ${isLeetCode ? 'active' : 'inactive'} for ${url}`);
     } catch (error) {
-      console.error('❌ Failed to update icon:', error);
+      // Ignore errors in production
     }
   }
 }
@@ -220,7 +202,7 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
     const tab = await chrome.tabs.get(activeInfo.tabId);
     await iconManager.updateIcon(activeInfo.tabId, tab.url);
   } catch (error) {
-    console.error('❌ Failed to get active tab:', error);
+    // Ignore errors in production
   }
 });
 
@@ -232,7 +214,7 @@ chrome.runtime.onStartup.addListener(async () => {
       await iconManager.updateIcon(tabs[0].id, tabs[0].url);
     }
   } catch (error) {
-    console.error('❌ Failed to set initial icon:', error);
+    // Ignore errors in production
   }
 });
 

@@ -1,5 +1,3 @@
-console.log("🔧 dotpush popup loaded");
-
 // Define UI Elements
 const authView = document.getElementById('authView');
 const codeView = document.getElementById('codeView');
@@ -49,7 +47,6 @@ async function checkAuthStatus() {
     
     showLoginView();
   } catch (error) {
-    console.error('Error checking auth status:', error);
     showLoginView();
   }
 }
@@ -111,9 +108,7 @@ loginBtn.addEventListener('click', async () => {
     loginBtn.disabled = true;
     loginBtn.textContent = 'Starting...';
     
-    console.log('Starting device flow...');
     const deviceFlow = await githubAuth.startDeviceFlow();
-    console.log('Device flow response:', deviceFlow);
     
     if (!deviceFlow.user_code) {
       throw new Error('No user code received from GitHub');
@@ -129,7 +124,7 @@ loginBtn.addEventListener('click', async () => {
     try {
       await navigator.clipboard.writeText(deviceFlow.user_code);
       showStatus('Auth code copied!', 'success');
-    } catch(e) { console.warn('Clipboard copy failed',e); }
+    } catch(e) { }
 
     // Switch to main view so code & copy button are visible
     hideAllViews();
@@ -144,7 +139,6 @@ loginBtn.addEventListener('click', async () => {
     });
     
   } catch (error) {
-    console.error('Error starting authentication:', error);
     showStatus(`Failed to start authentication: ${error.message}`, 'error');
     showLoginView();
   } finally {
@@ -181,7 +175,6 @@ if (logoutBtn) logoutBtn.addEventListener('click', async () => {
 
 // Push button click handler
 if (pushBtn) pushBtn.addEventListener('click', async () => {
-  console.log("🚀 Push button clicked!");
   
   try {
     pushBtn.disabled = true;
@@ -189,7 +182,6 @@ if (pushBtn) pushBtn.addEventListener('click', async () => {
     showStatus('extracting code...', 'info');
     
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-    console.log("📋 Active tab:", tabs[0]);
     
     if (!tabs[0].url.includes('leetcode.com')) {
       showStatus('go to leetcode first', 'error');
@@ -197,21 +189,17 @@ if (pushBtn) pushBtn.addEventListener('click', async () => {
     }
     
     // First, try to clear any cached scripts by reloading the page content
-    console.log("🔄 Refreshing page to clear cache...");
     try {
       await chrome.scripting.executeScript({
         target: { tabId: tabs[0].id },
         world: 'MAIN',
         func: () => {
           // Just a simple script to verify injection works
-          console.log("🧹 dotpush: Cache clearing script ran");
         }
       });
     } catch (e) {
-      console.log("Cache clear attempt failed:", e);
     }
     
-    console.log("💉 Injecting V6 code extractor (MAIN world)…");
 
     const [{ result: extraction }] = await chrome.scripting.executeScript({
       target: { tabId: tabs[0].id },
@@ -288,16 +276,13 @@ if (pushBtn) pushBtn.addEventListener('click', async () => {
     });
 
     if (!extraction || !extraction.ok) {
-      console.error('❌ V6: Extraction failed', extraction && extraction.debug);
       showStatus('Failed to extract code. Please ensure the code editor is visible.', 'error');
       return;
     }
 
-    console.log('✅ V6: Extracted', extraction.code.length, 'chars via', extraction.method);
     await pushToGitHub(extraction.code, tabs[0].url, extraction.language);
     
   } catch (error) {
-    console.error('❌ Error pushing code:', error);
     showStatus(`Failed to push code: ${error.message}`, 'error');
   } finally {
     pushBtn.disabled = false;
@@ -307,22 +292,12 @@ if (pushBtn) pushBtn.addEventListener('click', async () => {
 
 // Listen for messages from content script and background script
 chrome.runtime.onMessage.addListener(async (request, sender) => {
-  console.log("📨 Received message:", request.type, request.version || "unknown version");
   
   if (request.type === "leetcode-code-v5") {
-    console.log("🎉 V5 SUCCESS! Received code from V5 script:");
-    console.log("📊 V5 Method:", request.method);
-    console.log("📊 V5 Debug info:", request.debug);
-    console.log("📥 V5 Code length:", request.code.length, "characters");
     await pushToGitHub(request.code, request.url, request.language);
   } else if (request.type === "leetcode-code") {
-    console.log("⚠️  OLD SCRIPT! Received code from old/cached script:");
-    console.log("📥 Old script code:", request.code.substring(0, 100) + "...");
-    console.log("🔄 This means the V5 script didn't run - still have caching issues!");
     await pushToGitHub(request.code, request.url, request.language);
   } else if (request.type === "error-v5") {
-    console.error("❌ V5 Error:", request.message);
-    console.error("📊 V5 Debug info:", request.debug);
     showStatus(request.message, 'error');
     
     // Re-enable push button on error
@@ -332,7 +307,6 @@ chrome.runtime.onMessage.addListener(async (request, sender) => {
       pushBtn.textContent = 'Push Solution';
     }
   } else if (request.type === "auth-complete") {
-    console.log("🎉 Authentication completed in background!");
     
     // Update auth status
     if (authStatusEl) {
@@ -351,7 +325,6 @@ chrome.runtime.onMessage.addListener(async (request, sender) => {
       showStatus('Successfully authenticated with GitHub!', 'success');
     }, 1000);
   } else if (request.type === "error") {
-    console.error("❌ Error from old script:", request.message);
     showStatus(request.message, 'error');
     
     // Re-enable push button on error
@@ -376,12 +349,10 @@ async function ensureRepositoryExists(token, username, repoName) {
     });
     
     if (response.ok) {
-      console.log("Repository exists");
       return true;
     }
     
     if (response.status === 404) {
-      console.log("Repository doesn't exist, creating it...");
       
       const createResponse = await fetch("https://api.github.com/user/repos", {
         method: "POST",
@@ -399,20 +370,16 @@ async function ensureRepositoryExists(token, username, repoName) {
       });
       
       if (createResponse.ok) {
-        console.log("Repository created successfully!");
         showStatus(`Created repository: ${username}/${repoName}`, 'success');
         return true;
       } else {
         const errorData = await createResponse.json();
-        console.error("Failed to create repository:", errorData);
         return false;
       }
     }
     
-    console.error("Unexpected response:", response.status);
     return false;
   } catch (error) {
-    console.error("Error checking/creating repository:", error);
     return false;
   }
 }
@@ -420,7 +387,6 @@ async function ensureRepositoryExists(token, username, repoName) {
 // Push code to GitHub
 async function pushToGitHub(code, url, language = 'python') {
   try {
-    console.log("pushToGitHub()", { code, url, language });
     
     const auth = await githubAuth.loadAuth();
     if (!auth.github_token || !auth.github_username) {
@@ -462,7 +428,6 @@ async function pushToGitHub(code, url, language = 'python') {
       exists = true;
     } else if (checkResponse.status !== 404) {
       const errorData = await checkResponse.json();
-      console.error(`GitHub API error (${checkResponse.status}):`, errorData);
       showStatus(`GitHub API error: ${errorData.message}`, 'error');
       return;
     }
@@ -491,14 +456,11 @@ async function pushToGitHub(code, url, language = 'python') {
 
     const result = await putResponse.json();
     if (result.content) {
-      console.log(`File pushed: ${result.content.path}`);
       showStatus('pushing...', 'success!');
     } else {
-      console.error('GitHub push error:', result);
       showStatus(`Failed to push: ${result.message || 'Unknown error'}`, 'error');
     }
   } catch (err) {
-    console.error('Network/API error:', err);
     showStatus('Network error occurred', 'error');
   }
 }
