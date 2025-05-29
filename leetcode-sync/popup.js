@@ -3,6 +3,8 @@ console.log("🔧 DotPush popup loaded");
 // Define UI Elements (new IDs added)
 const authView = document.getElementById('authView');
 const codeView = document.getElementById('codeView');
+const setupRepoView = document.getElementById('setupRepoView');
+const setupCollabView = document.getElementById('setupCollabView');
 const mainView = document.getElementById('mainView');
 const loadingView = document.getElementById('loadingView');
 
@@ -11,6 +13,12 @@ const pushBtn = document.getElementById('syncButton') || document.getElementById
 const logoutBtn = document.getElementById('logoutButton') || document.getElementById('logout-btn');
 const copyBtn = document.getElementById('copyButton'); // may be null now
 const openGitHubBtn = document.getElementById('openGitHubBtn') || document.getElementById('openGitHubBtn');
+
+// Setup flow buttons
+const createRepoBtn = document.getElementById('createRepoBtn');
+const repoCreatedBtn = document.getElementById('repoCreatedBtn');
+const addCollabBtn = document.getElementById('addCollabBtn');
+const collabAddedBtn = document.getElementById('collabAddedBtn');
 
 const authCodeEl = document.getElementById('authCode') || document.getElementById('auth-code');
 const userInfoEl = document.getElementById('userInfo') || document.getElementById('user-info');
@@ -56,7 +64,7 @@ async function checkAuthStatus() {
 
 // Helpers to toggle views
 function hideAllViews() {
-  [authView, codeView, mainView, loadingView].forEach(v => v && v.classList.add('hidden'));
+  [authView, codeView, setupRepoView, setupCollabView, mainView, loadingView].forEach(v => v && v.classList.add('hidden'));
 }
 
 function showLoginView() {
@@ -70,12 +78,29 @@ function showCodeView() {
   if (codeView) codeView.classList.remove('hidden');
 }
 
-function showLoggedInView(auth) {
+function showSetupRepoView() {
+  hideAllViews();
+  if (setupRepoView) setupRepoView.classList.remove('hidden');
+}
+
+function showSetupCollabView() {
+  hideAllViews();
+  if (setupCollabView) setupCollabView.classList.remove('hidden');
+}
+
+async function showLoggedInView(auth) {
+  // Check if setup is complete first
+  const setupComplete = await checkSetupComplete(auth);
+  if (!setupComplete) {
+    showSetupRepoView();
+    return;
+  }
+
   hideAllViews();
   if (mainView) mainView.classList.remove('hidden');
 
   if (userInfoEl) {
-    userInfoEl.innerHTML = `<div><strong>@${auth.github_username}</strong></div><div>ready</div>`;
+    userInfoEl.textContent = `Logged in as: @${auth.github_username}`;
   }
 
   if (copyBtn && authCodeEl) {
@@ -85,6 +110,13 @@ function showLoggedInView(auth) {
       });
     };
   }
+}
+
+// Check if repository exists and setup is complete
+async function checkSetupComplete(auth) {
+  // Check if user has completed setup by looking for a flag in storage
+  const result = await chrome.storage.local.get(['setupComplete']);
+  return result.setupComplete === true;
 }
 
 // Show auth flow
@@ -136,13 +168,6 @@ loginBtn.addEventListener('click', async () => {
       showStatus('Auth code copied!', 'success');
     } catch(e) { console.warn('Clipboard copy failed',e); }
 
-    // openGitHubBtn opens verification URL
-    if (openGitHubBtn) {
-      openGitHubBtn.onclick = () => {
-        if (currentVerificationUri) chrome.tabs.create({ url: currentVerificationUri });
-      };
-    }
-
     // Switch to main view so code & copy button are visible
     hideAllViews();
     if (codeView) codeView.classList.remove('hidden');
@@ -187,6 +212,8 @@ if (openGitHubBtn) {
 // Logout button click handler
 if (logoutBtn) logoutBtn.addEventListener('click', async () => {
   await githubAuth.clearAuth();
+  // Also clear setup completion flag so user can redo setup
+  await chrome.storage.local.remove(['setupComplete']);
   showLoginView();
   showStatus('Successfully logged out', 'info');
 });
@@ -404,7 +431,7 @@ async function ensureRepositoryExists(token, username, repoName) {
         },
         body: JSON.stringify({
           name: repoName,
-          description: "LeetCode solutions auto-pushed from DotPush extension",
+          description: "LeetCode solutions automatically synced from DotPush extension",
           private: false,
           auto_init: true
         })
@@ -434,9 +461,9 @@ async function pushToGitHub(code, url, language = 'python') {
   try {
     console.log("pushToGitHub()", { code, url, language });
     
-    // Get authentication info
+    // Get user info for co-authored commits
     const auth = await githubAuth.loadAuth();
-    if (!auth.github_token || !auth.github_username) {
+    if (!auth.github_username) {
       showStatus('Please authenticate with GitHub first', 'error');
       return;
     }
@@ -445,23 +472,40 @@ async function pushToGitHub(code, url, language = 'python') {
     const fileExtension = getFileExtension(language);
     const fileName = `${slug}.${fileExtension}`;
     const path = `leetcode/${fileName}`;
-    const repoName = "leetcode";
-    const token = auth.github_token;
+    const repoName = "leetcode-sync";
     const username = auth.github_username;
+    
+    // Use bot token for repository operations
+    const BOT_TOKEN = DOTPUSH_CONFIG.GITHUB_TOKEN; // Bot token from config
     const apiUrl = `https://api.github.com/repos/${username}/${repoName}/contents/${path}`;
     const contentB64 = btoa(unescape(encodeURIComponent(code)));
 
-    // Ensure repository exists
-    const repoExists = await ensureRepositoryExists(token, username, repoName);
-    if (!repoExists) {
-      showStatus('Could not create or access repository', 'error');
-      return;
+    // Check if repository exists and bot has collaborator access
+    const repoCheckUrl = `https://api.github.com/repos/${username}/${repoName}`;
+    const repoResponse = await fetch(repoCheckUrl, {
+      headers: {
+        Authorization: `Bearer ${BOT_TOKEN}`,
+        "User-Agent": "dotpush-extension"
+      }
+    });
+
+    if (!repoResponse.ok) {
+      if (repoResponse.status === 404) {
+        showStatus('Repository not found. Please complete the setup first.', 'error');
+        return;
+      } else if (repoResponse.status === 403) {
+        showStatus('Bot not added as collaborator. Please complete setup.', 'error');
+        return;
+      } else {
+        showStatus('Cannot access repository. Please check setup.', 'error');
+        return;
+      }
     }
 
     // Check if file already exists to get its SHA
     const checkResponse = await fetch(apiUrl, {
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${BOT_TOKEN}`,
         "User-Agent": "dotpush-extension"
       }
     });
@@ -479,7 +523,13 @@ async function pushToGitHub(code, url, language = 'python') {
       return;
     }
 
-    const commitMessage = exists ? `update ${slug} solution` : `Add solution for ${slug}`;
+    // Create commit message with co-authored-by for user credit
+    const userEmail = auth.github_user_info?.email || `${auth.github_username}@users.noreply.github.com`;
+    const userName = auth.github_user_info?.name || auth.github_username;
+    const commitMessage = exists ? 
+      `Update solution for ${slug}\n\nCo-authored-by: ${userName} <${userEmail}>` : 
+      `Add solution for ${slug}\n\nCo-authored-by: ${userName} <${userEmail}>`;
+      
     const body = {
       message: commitMessage,
       content: contentB64,
@@ -490,7 +540,7 @@ async function pushToGitHub(code, url, language = 'python') {
     const putResponse = await fetch(apiUrl, {
       method: 'PUT',
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${BOT_TOKEN}`,
         "Content-Type": "application/json",
         "User-Agent": "dotpush-extension"
       },
@@ -532,4 +582,37 @@ function getFileExtension(language) {
     swift: 'swift'
   };
   return map[language] || 'txt';
+}
+
+// Setup flow button handlers
+if (createRepoBtn) {
+  createRepoBtn.addEventListener('click', () => {
+    const url = 'https://github.com/new?name=leetcode-sync&description=LeetCode+solutions+synced+via+DotPush&visibility=public';
+    chrome.tabs.create({ url });
+  });
+}
+
+if (repoCreatedBtn) {
+  repoCreatedBtn.addEventListener('click', () => {
+    showSetupCollabView();
+  });
+}
+
+if (addCollabBtn) {
+  addCollabBtn.addEventListener('click', async () => {
+    const auth = await githubAuth.loadAuth();
+    const url = `https://github.com/${auth.github_username}/leetcode-sync/settings/access`;
+    chrome.tabs.create({ url });
+  });
+}
+
+if (collabAddedBtn) {
+  collabAddedBtn.addEventListener('click', async () => {
+    // Mark setup as complete
+    await chrome.storage.local.set({ setupComplete: true });
+    
+    const auth = await githubAuth.loadAuth();
+    showLoggedInView(auth);
+    showStatus('Setup complete! Ready to sync solutions.', 'success');
+  });
 }

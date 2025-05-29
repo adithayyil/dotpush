@@ -1,1 +1,9 @@
 config.js
+.env
+.env.local
+.env.production
+.env.development
+*.env
+
+# Bot folder - contains sensitive tokens
+bot/

@@ -2,306 +2,481 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Dotpush</title>
+  <title>DotPush</title>
   <style>
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+html {
+  border-radius: 16px;
+  overflow: hidden;
+  background: linear-gradient(145deg, #1a1a1a 0%, #0d1117 100%);
+}
 
 body {
-  width: 320px;
+  width: 240px;
+  height: 300px;
   padding: 0;
-  font-family: 'JetBrains Mono', monospace;
-  background: #000000;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: linear-gradient(145deg, #1a1a1a 0%, #0d1117 100%);
   color: #ffffff;
   margin: 0;
   font-size: 13px;
+  overflow: hidden;
+  border-radius: 16px;
 }
 
 .container {
-  background: #000000;
-  border: 2px solid #ffffff;
-  padding: 24px;
+  background: transparent;
+  padding: 16px 12px;
   position: relative;
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
 }
 
-.logo {
+.header {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 24px;
-  gap: 12px;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  gap: 8px;
 }
 
-.pixel-dot {
-  width: 32px;
-  height: 32px;
-  background: #ffffff;
+.orbital-icon {
+  width: 28px;
+  height: 28px;
   position: relative;
-  image-rendering: pixelated;
-  image-rendering: -moz-crisp-edges;
-  image-rendering: crisp-edges;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.pixel-dot::before {
-  content: '';
+.orbital-ring {
+  width: 28px;
+  height: 28px;
+  border: 2px dotted #ffffff;
+  border-radius: 50%;
   position: absolute;
-  top: 4px;
-  left: 4px;
-  right: 4px;
-  bottom: 4px;
-  background: #000000;
+  animation: rotate 10s linear infinite;
 }
 
-.pixel-dot::after {
-  content: '';
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  right: 8px;
-  bottom: 8px;
+.orbital-center {
+  width: 10px;
+  height: 10px;
   background: #ffffff;
+  border-radius: 50%;
+  position: relative;
+  z-index: 2;
 }
 
-h1 {
-  font-size: 18px;
+.arrow {
+  position: absolute;
+  right: -5px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #ffffff;
+  font-size: 14px;
+  z-index: 1;
+}
+
+.github-cat {
+  width: 26px;
+  height: 26px;
+  background: #ffffff;
+  mask: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z'/%3E%3C/svg%3E") center/contain;
+  mask-repeat: no-repeat;
+}
+
+.logo-text {
+  font-size: 20px;
+  font-weight: 700;
   margin: 0;
+  color: #ffffff;
+  letter-spacing: -1px;
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.user-status {
+  text-align: center;
+  margin-bottom: 0;
+}
+
+.logged-in-text {
+  font-size: 13px;
+  font-weight: 500;
+  color: #e6edf3;
+  margin-bottom: 8px;
+}
+
+.ready-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-size: 12px;
+  color: #7ed321;
+  font-weight: 500;
+}
+
+.checkmark {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #7ed321;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+}
+
+.push-button {
+  width: 200px;
+  height: 44px;
+  background: linear-gradient(145deg, #238636, #2ea043);
+  border: none;
+  border-radius: 22px;
+  color: #ffffff;
+  font-size: 13px;
   font-weight: 600;
-  letter-spacing: 1px;
-  text-transform: lowercase;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 3px 10px rgba(46, 160, 67, 0.3);
+}
+
+.push-button:hover:not(:disabled) {
+  background: linear-gradient(145deg, #2ea043, #238636);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(46, 160, 67, 0.4);
+}
+
+.push-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.footer-status {
+  position: absolute;
+  bottom: 10px;
+  left: 12px;
+  right: 12px;
+  text-align: center;
+  font-size: 10px;
+  color: #7d8590;
+  font-weight: 500;
+}
+
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.connection-dot {
+  width: 6px;
+  height: 6px;
+  background: #7ed321;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
 .view {
   display: none;
+  height: 100%;
 }
 
 .view:not(.hidden) {
-  display: block;
+  display: flex;
+  flex-direction: column;
 }
 
-.auth-step {
+.auth-view {
+  justify-content: center;
+  align-items: center;
   text-align: center;
-  margin: 20px 0;
+  gap: 20px;
 }
 
-.user-info {
-  background: #ffffff;
-  color: #000000;
-  padding: 16px;
-  border: 2px solid #ffffff;
-  margin-bottom: 20px;
-  text-align: center;
-  font-weight: 500;
+.auth-description {
+  font-size: 12px;
+  color: #e6edf3;
+  line-height: 1.4;
+  max-width: 210px;
 }
 
-button {
-  width: 100%;
-  padding: 14px 16px;
-  border: 2px solid #ffffff;
-  background: #000000;
-  color: #ffffff;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  margin: 8px 0;
-  transition: all 0.15s ease;
-  font-family: 'JetBrains Mono', monospace;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.primary-btn {
-  background: #ffffff;
-  color: #000000;
-  border: 2px solid #ffffff;
-}
-
-.primary-btn:hover:not(:disabled) {
-  background: #000000;
-  color: #ffffff;
-  box-shadow: inset 0 0 0 2px #ffffff;
-}
-
-.secondary-btn {
-  background: #000000;
-  color: #ffffff;
-  border: 2px solid #ffffff;
-}
-
-.secondary-btn:hover:not(:disabled) {
-  background: #ffffff;
-  color: #000000;
-}
-
-.danger-btn {
-  background: #000000;
-  color: #ffffff;
-  border: 2px solid #ffffff;
-  position: relative;
-}
-
-.danger-btn:hover:not(:disabled) {
-  background: #ffffff;
-  color: #000000;
-}
-
-.danger-btn::before {
-  content: '⚠';
-  margin-right: 8px;
-}
-
-.danger-btn.small-logout {
-  position: absolute;
-  top: 0;
-  right: 0;
-  padding: 4px 8px;
-  font-size: 10px;
-  background: transparent;
+.auth-button {
+  width: 200px;
+  height: 40px;
+  background: linear-gradient(145deg, #238636, #2ea043);
   border: none;
+  border-radius: 20px;
   color: #ffffff;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
+  font-size: 12px;
+  font-weight: 600;
   cursor: pointer;
-  z-index: 10;
-  width: auto;
-  height: auto;
+  transition: all 0.2s ease;
 }
 
-.danger-btn.small-logout:hover { text-decoration: underline; }
+.auth-button:hover:not(:disabled) {
+  background: linear-gradient(145deg, #2ea043, #238636);
+  transform: translateY(-2px);
+}
 
-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none !important;
+.code-view {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+}
+
+.auth-code {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  padding: 12px;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+}
+
+.auth-code:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.code-instructions {
+  font-size: 10px;
+  color: #7d8590;
+  line-height: 1.3;
 }
 
 .status {
-  padding: 12px;
-  border: 2px solid #ffffff;
-  margin: 12px 0;
-  font-size: 12px;
-  text-align: center;
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 24px;
+  border-radius: 20px;
+  font-size: 14px;
   font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  z-index: 1000;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
 }
 
 .status.success {
-  background: #ffffff;
-  color: #000000;
+  background: rgba(46, 160, 67, 0.9);
+  color: #ffffff;
 }
 
-.status.success::before, .status.error::before, .status.info::before { content: ''; }
+.status.error {
+  background: rgba(218, 54, 51, 0.9);
+  color: #ffffff;
+}
+
+.status.info {
+  background: rgba(31, 111, 235, 0.9);
+  color: #ffffff;
+}
 
 .hidden {
   display: none !important;
 }
 
-.description {
-  font-size: 12px;
-  text-align: center;
-  margin-bottom: 20px;
-  line-height: 1.5;
-  font-weight: 400;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.auth-code {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 24px;
-  font-weight: 700;
-  text-align: center;
-  background: #ffffff;
-  color: #000000;
-  padding: 16px;
-  border: 2px solid #ffffff;
-  margin: 16px 0;
-  letter-spacing: 4px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.auth-code:hover {
-  background: #000000;
-  color: #ffffff;
-  box-shadow: inset 0 0 0 2px #ffffff;
-}
-
-.loading {
-  text-align: center;
-  font-size: 11px;
-  margin: 16px 0;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  font-weight: 500;
-}
-
-.loading::before {
-  content: '◐ ';
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-/* Scanline effect */
-.container::before {
-  content: '';
+.logout-btn {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(255, 255, 255, 0.03) 2px,
-    rgba(255, 255, 255, 0.03) 4px
-  );
-  pointer-events: none;
+  top: 12px;
+  right: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: #7d8590;
+  font-size: 10px;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+}
+
+.logout-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.setup-view {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+}
+
+.setup-content {
+  text-align: center;
+}
+
+.setup-title {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #ffffff;
+}
+
+.setup-description {
+  font-size: 12px;
+  color: #e6edf3;
+  line-height: 1.4;
+  max-width: 210px;
+  margin-bottom: 16px;
+}
+
+.secondary-button {
+  width: 200px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 18px;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 8px;
+  backdrop-filter: blur(10px);
+}
+
+.secondary-button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
 }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="logo">
-      <div class="pixel-dot"></div>
-      <h1>dotpush</h1>
+    <!-- Header with DotPush logo -->
+    <div class="header">
+      <div class="orbital-icon">
+        <div class="orbital-ring"></div>
+        <div class="orbital-center"></div>
+        <div class="arrow">→</div>
+      </div>
+      <div class="github-cat"></div>
+      <h1 class="logo-text">DotPush</h1>
     </div>
 
-    <div id="authView" class="view">
-      <p class="description">
-        To start using Dotpush, please authenticate with your GitHub account.
+    <!-- Authentication View -->
+    <div id="authView" class="view auth-view">
+      <p class="auth-description">
+        Connect your GitHub account to sync LeetCode solutions with minimal permissions.
       </p>
-      <div class="auth-step">
-        <button id="authButton" class="primary-btn">
-          Authenticate with GitHub
+      <button id="authButton" class="auth-button">
+        Authenticate with GitHub
+      </button>
+    </div>
+
+    <!-- Code Input View -->
+    <div id="codeView" class="view code-view hidden">
+      <p class="auth-description"><strong>Step 1:</strong> Copy this code</p>
+      <div id="authCode" class="auth-code">Loading…</div>
+      <button id="openGitHubBtn" class="auth-button">Step 2: Open GitHub & Enter Code</button>
+      <p class="code-instructions">You can close this popup—authentication continues in the background</p>
+    </div>
+
+    <!-- Setup Step 1: Create Repository -->
+    <div id="setupRepoView" class="view setup-view hidden">
+      <div class="setup-content">
+        <h3 class="setup-title">Step 1: Create Repository</h3>
+        <p class="setup-description">
+          Create a public repository called "leetcode-sync" to store your solutions.
+        </p>
+        <button id="createRepoBtn" class="auth-button">
+          Create leetcode-sync Repository
+        </button>
+        <button id="repoCreatedBtn" class="secondary-button">
+          I've Created the Repository
         </button>
       </div>
     </div>
 
-    <div id="codeView" class="view hidden">
-      <p class="description"><strong>Step&nbsp;1:</strong>&nbsp;Copy this code</p>
-      <div id="authCode" class="auth-code">Loading…</div>
-      <div class="auth-step">
-        <button id="openGitHubBtn" class="primary-btn">Step&nbsp;2: Open GitHub &amp; Enter Code</button>
+    <!-- Setup Step 2: Add Collaborator -->
+    <div id="setupCollabView" class="view setup-view hidden">
+      <div class="setup-content">
+        <h3 class="setup-title">Step 2: Add Collaborator</h3>
+        <p class="setup-description">
+          Add "Dot-Push" as a collaborator to your leetcode-sync repository.
+        </p>
+        <button id="addCollabBtn" class="auth-button">
+          Add Dot-Push as Collaborator
+        </button>
+        <button id="collabAddedBtn" class="secondary-button">
+          I've Added the Collaborator
+        </button>
       </div>
-      <div class="description" style="font-size:10px;opacity:.8">You can close this popup—authentication continues in the background</div>
     </div>
 
+    <!-- Main View (Logged In) -->
     <div id="mainView" class="view hidden">
-      <div id="userInfo" class="user-info"></div>
-      <button id="syncButton" class="primary-btn">Push&nbsp;to&nbsp;GitHub</button>
-      <button id="logoutButton" class="danger-btn small-logout" title="Logout">Logout</button>
-      <div id="status" class="status info hidden"></div>
+      <div class="main-content">
+        <div class="user-status">
+          <div id="userInfo" class="logged-in-text"></div>
+          <div class="ready-status">
+            <div class="checkmark">✓</div>
+            Ready to push
+          </div>
+        </div>
+        
+        <button id="syncButton" class="push-button">
+          PUSH TO GITHUB
+        </button>
+      </div>
+      
+      <div class="footer-status">
+        <div class="status-indicator">
+          <div class="connection-dot"></div>
+          Github-connected • Auto-sync enabled
+        </div>
+      </div>
+      
+      <button id="logoutButton" class="logout-btn">Logout</button>
     </div>
 
+    <!-- Loading View -->
     <div id="loadingView" class="view hidden">
-      <div class="loading">Loading...</div>
+      <div class="main-content">
+        <div class="loading">Loading...</div>
+      </div>
     </div>
+
+    <!-- Status Messages -->
+    <div id="status" class="status hidden"></div>
   </div>
+  
+  <script src="config.js"></script>
   <script src="auth.js"></script>
   <script src="popup.js"></script>
 </body>

@@ -27,7 +27,7 @@ class GitHubAuth {
           "Accept": "application/json",
           "Content-Type": "application/x-www-form-urlencoded"
         },
-        body: `client_id=${this.clientId}&scope=repo user:email`
+        body: `client_id=${this.clientId}&scope=user:email`
       });
 
       if (!response.ok) {
