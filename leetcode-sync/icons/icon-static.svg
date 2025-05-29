@@ -1,0 +1,21 @@
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <!-- Orbital dots ring around center -->
+  <g transform="translate(64,64)">
+    <!-- 12 clean dark dots in a perfect circle -->
+    <circle cx="0" cy="-35" r="4" fill="#374151"/>
+    <circle cx="17.5" cy="-30.3" r="4" fill="#374151"/>
+    <circle cx="30.3" cy="-17.5" r="4" fill="#374151"/>
+    <circle cx="35" cy="0" r="4" fill="#374151"/>
+    <circle cx="30.3" cy="17.5" r="4" fill="#374151"/>
+    <circle cx="17.5" cy="30.3" r="4" fill="#374151"/>
+    <circle cx="0" cy="35" r="4" fill="#374151"/>
+    <circle cx="-17.5" cy="30.3" r="4" fill="#374151"/>
+    <circle cx="-30.3" cy="17.5" r="4" fill="#374151"/>
+    <circle cx="-35" cy="0" r="4" fill="#374151"/>
+    <circle cx="-30.3" cy="-17.5" r="4" fill="#374151"/>
+    <circle cx="-17.5" cy="-30.3" r="4" fill="#374151"/>
+  </g>
+  
+  <!-- Green center circle -->
+  <circle cx="64" cy="64" r="18" fill="#10B981"/>
+</svg> 

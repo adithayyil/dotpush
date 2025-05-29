@@ -1,4 +1,4 @@
-console.log("DotPush is running");
+console.log("dotpush is running");
 
 // Just check if we're on a LeetCode problem page
 if (window.location.href.startsWith("https://leetcode.com/problems/")) {

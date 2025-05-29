@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>DotPush</title>
+  <title>dotpush</title>
   <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
@@ -40,7 +40,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-top: 20px;
+  margin-top: 36px;
   margin-bottom: 20px;
   gap: 8px;
 }
@@ -278,16 +278,17 @@ body {
 
 .status {
   position: fixed;
-  top: 16px;
+  top: 26px;
   left: 50%;
   transform: translateX(-50%);
-  padding: 12px 24px;
+  padding: 12px 32px;
   border-radius: 20px;
   font-size: 14px;
   font-weight: 500;
   z-index: 1000;
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
+  white-space: nowrap;
 }
 
 .status.success {
@@ -378,7 +379,7 @@ body {
 </head>
 <body>
   <div class="container">
-    <!-- Header with DotPush logo -->
+    <!-- Header with dotpush logo -->
     <div class="header">
       <div class="orbital-icon">
         <div class="orbital-ring"></div>
@@ -386,7 +387,7 @@ body {
         <div class="arrow">→</div>
       </div>
       <div class="github-cat"></div>
-      <h1 class="logo-text">DotPush</h1>
+      <h1 class="logo-text">dotpush</h1>
     </div>
 
     <!-- Authentication View -->

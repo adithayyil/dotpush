@@ -1,4 +1,4 @@
-# DotPush Bot Setup Guide
+# dotpush Bot Setup Guide
 
 ## 🤖 Creating the Bot Account
 

@@ -1,4 +1,4 @@
-// Background script for DotPush Extension
+// Background script for dotpush Extension
 // Handles OAuth authentication polling that persists when popup closes
 
 class BackgroundAuth {
@@ -39,7 +39,7 @@ class BackgroundAuth {
           const userResponse = await fetch("https://api.github.com/user", {
             headers: {
               "Authorization": `Bearer ${data.access_token}`,
-              "User-Agent": "DotPush-Extension"
+              "User-Agent": "dotpush-Extension"
             }
           });
           
@@ -113,7 +113,7 @@ class BackgroundAuth {
       const checkResponse = await fetch(repoUrl, {
         headers: {
           Authorization: `Bearer ${token}`,
-          "User-Agent": "DotPush-Extension"
+          "User-Agent": "dotpush-Extension"
         }
       });
       
@@ -130,11 +130,11 @@ class BackgroundAuth {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
-            "User-Agent": "DotPush-Extension"
+            "User-Agent": "dotpush-Extension"
           },
           body: JSON.stringify({
             name: repoName,
-            description: "LeetCode solutions automatically synced from DotPush extension",
+            description: "LeetCode solutions automatically synced from dotpush extension",
             private: false,
             auto_init: true
           })
@@ -160,6 +160,81 @@ class BackgroundAuth {
 }
 
 const backgroundAuth = new BackgroundAuth();
+
+// Icon management for LeetCode page detection
+class IconManager {
+  constructor() {
+    this.activeIconPaths = {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png", 
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    };
+    
+    this.inactiveIconPaths = {
+      "16": "icons/inactive-16.png",
+      "32": "icons/inactive-32.png",
+      "48": "icons/inactive-48.png", 
+      "128": "icons/inactive-128.png"
+    };
+  }
+
+  // Update icon based on current tab
+  async updateIcon(tabId, url) {
+    const isLeetCode = url && url.includes('leetcode.com');
+    
+    try {
+      await chrome.action.setIcon({
+        tabId: tabId,
+        path: isLeetCode ? this.activeIconPaths : this.inactiveIconPaths
+      });
+      
+      // Update title to reflect state
+      await chrome.action.setTitle({
+        tabId: tabId,
+        title: isLeetCode ? 
+          "dotpush - Ready to sync!" : 
+          "dotpush - Navigate to LeetCode"
+      });
+      
+      console.log(`🎨 Icon updated: ${isLeetCode ? 'active' : 'inactive'} for ${url}`);
+    } catch (error) {
+      console.error('❌ Failed to update icon:', error);
+    }
+  }
+}
+
+const iconManager = new IconManager();
+
+// Listen for tab updates to change icon state
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+  // Only update when the page has finished loading or URL changed
+  if (changeInfo.status === 'complete' || changeInfo.url) {
+    await iconManager.updateIcon(tabId, tab.url);
+  }
+});
+
+// Listen for tab activation (when user switches tabs)
+chrome.tabs.onActivated.addListener(async (activeInfo) => {
+  try {
+    const tab = await chrome.tabs.get(activeInfo.tabId);
+    await iconManager.updateIcon(activeInfo.tabId, tab.url);
+  } catch (error) {
+    console.error('❌ Failed to get active tab:', error);
+  }
+});
+
+// Set initial icon state when extension starts
+chrome.runtime.onStartup.addListener(async () => {
+  try {
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tabs[0]) {
+      await iconManager.updateIcon(tabs[0].id, tabs[0].url);
+    }
+  } catch (error) {
+    console.error('❌ Failed to set initial icon:', error);
+  }
+});
 
 // Listen for messages from popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {

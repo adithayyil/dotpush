@@ -1,10 +1,10 @@
-# 🚀 DotPush - LeetCode to GitHub Sync
+# 🚀 dotpush - LeetCode to GitHub Sync
 
 **Automatically sync your LeetCode solutions to GitHub with one click!**
 
-## What is DotPush?
+## What is dotpush?
 
-DotPush is a Chrome extension that seamlessly bridges your LeetCode practice with your GitHub portfolio. Never lose your coding solutions again - every problem you solve gets automatically pushed to your GitHub repository, building an impressive coding portfolio over time.
+dotpush is a Chrome extension that seamlessly bridges your LeetCode practice with your GitHub portfolio. Never lose your coding solutions again - every problem you solve gets automatically pushed to your GitHub repository, building an impressive coding portfolio over time.
 
 ## ✨ Key Features
 
@@ -24,7 +24,7 @@ DotPush is a Chrome extension that seamlessly bridges your LeetCode practice wit
 4. **Push** solutions to GitHub instantly with the extension button
 5. **Build** an impressive coding portfolio automatically!
 
-## Why DotPush?
+## Why dotpush?
 
 - **📈 Portfolio Building**: Showcase your coding journey on GitHub
 - **🔒 Never Lose Code**: All solutions safely stored in version control

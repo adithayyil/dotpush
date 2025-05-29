@@ -1,4 +1,4 @@
-console.log("🔧 DotPush popup loaded");
+console.log("🔧 dotpush popup loaded");
 
 // Define UI Elements
 const authView = document.getElementById('authView');
@@ -186,13 +186,13 @@ if (pushBtn) pushBtn.addEventListener('click', async () => {
   try {
     pushBtn.disabled = true;
     pushBtn.textContent = 'Pushing...';
-    showStatus('Extracting code from editor...', 'info');
+    showStatus('extracting code...', 'info');
     
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
     console.log("📋 Active tab:", tabs[0]);
     
     if (!tabs[0].url.includes('leetcode.com')) {
-      showStatus('Please navigate to a LeetCode problem page', 'error');
+      showStatus('go to leetcode first', 'error');
       return;
     }
     
@@ -204,7 +204,7 @@ if (pushBtn) pushBtn.addEventListener('click', async () => {
         world: 'MAIN',
         func: () => {
           // Just a simple script to verify injection works
-          console.log("🧹 DotPush: Cache clearing script ran");
+          console.log("🧹 dotpush: Cache clearing script ran");
         }
       });
     } catch (e) {
@@ -217,7 +217,7 @@ if (pushBtn) pushBtn.addEventListener('click', async () => {
       target: { tabId: tabs[0].id },
       world: 'MAIN',
       func: () => {
-        // === DotPush V6 Extractor (runs in page MAIN world) ===
+        // === dotpush V6 Extractor (runs in page MAIN world) ===
         const debug = [];
         let extractedCode = "";
         let method = "";
@@ -371,7 +371,7 @@ async function ensureRepositoryExists(token, username, repoName) {
     const response = await fetch(repoUrl, {
       headers: {
         Authorization: `Bearer ${token}`,
-        "User-Agent": "DotPush-Extension"
+        "User-Agent": "dotpush-Extension"
       }
     });
     
@@ -388,11 +388,11 @@ async function ensureRepositoryExists(token, username, repoName) {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
-          "User-Agent": "DotPush-Extension"
+          "User-Agent": "dotpush-Extension"
         },
         body: JSON.stringify({
           name: repoName,
-          description: "LeetCode solutions automatically synced from DotPush extension",
+          description: "LeetCode solutions automatically synced from dotpush extension",
           private: false,
           auto_init: true
         })
@@ -450,7 +450,7 @@ async function pushToGitHub(code, url, language = 'python') {
     const checkResponse = await fetch(apiUrl, {
       headers: {
         Authorization: `Bearer ${auth.github_token}`,
-        "User-Agent": "DotPush-Extension"
+        "User-Agent": "dotpush-Extension"
       }
     });
 
@@ -484,7 +484,7 @@ async function pushToGitHub(code, url, language = 'python') {
       headers: {
         Authorization: `Bearer ${auth.github_token}`,
         "Content-Type": "application/json",
-        "User-Agent": "DotPush-Extension"
+        "User-Agent": "dotpush-Extension"
       },
       body: JSON.stringify(body)
     });
@@ -492,7 +492,7 @@ async function pushToGitHub(code, url, language = 'python') {
     const result = await putResponse.json();
     if (result.content) {
       console.log(`File pushed: ${result.content.path}`);
-      showStatus(`✅ Pushed ${fileName} (${language}) to GitHub!`, 'success');
+      showStatus('pushing...', 'success!');
     } else {
       console.error('GitHub push error:', result);
       showStatus(`Failed to push: ${result.message || 'Unknown error'}`, 'error');

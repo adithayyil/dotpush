@@ -1,4 +1,4 @@
-// GitHub Device Flow OAuth for DotPush Extension
+// GitHub Device Flow OAuth for dotpush Extension
 // This provides a user-friendly way to authenticate without client secrets
 
 class GitHubAuth {
@@ -18,6 +18,27 @@ class GitHubAuth {
     // Check if client ID is configured
     if (!this.clientId || this.clientId === "YOUR_GITHUB_OAUTH_CLIENT_ID") {
       throw new Error("GitHub OAuth Client ID not configured. Please follow the setup instructions in README.md");
+    }
+
+    // Check if we have the necessary permissions
+    try {
+      const hasPermissions = await chrome.permissions.contains({
+        origins: ["https://github.com/*"]
+      });
+      
+      if (!hasPermissions) {
+        console.log("Requesting GitHub permissions...");
+        const granted = await chrome.permissions.request({
+          origins: ["https://github.com/*"]
+        });
+        
+        if (!granted) {
+          throw new Error("GitHub permissions not granted. Please allow access to GitHub.");
+        }
+      }
+    } catch (permError) {
+      console.warn("Permission check failed:", permError);
+      // Continue anyway - might be in development mode
     }
 
     try {
@@ -101,7 +122,7 @@ class GitHubAuth {
       const response = await fetch("https://api.github.com/user", {
         headers: {
           "Authorization": `Bearer ${token}`,
-          "User-Agent": "DotPush-Extension"
+          "User-Agent": "dotpush-Extension"
         }
       });
 
@@ -147,7 +168,7 @@ class GitHubAuth {
       const response = await fetch("https://api.github.com/user", {
         headers: {
           "Authorization": `Bearer ${token}`,
-          "User-Agent": "DotPush-Extension"
+          "User-Agent": "dotpush-Extension"
         }
       });
       return response.ok;
