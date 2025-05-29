@@ -1,16 +1,24 @@
 {
   "manifest_version": 3,
-  "name": "DotPush",
+  "name": "dotpush",
   "version": "1.0",
-  "description": "Auto-push completed LeetCode problems to GitHub.",
+  "description": "Automatically push your LeetCode solutions to GitHub",
   "permissions": [
+    "storage",
+    "activeTab",
     "scripting",
-    "activeTab"
+    "tabs"
   ],
   "host_permissions": [
-    "https://leetcode.com/problems/*"
+    "https://leetcode.com/*",
+    "https://api.github.com/*",
+    "https://github.com/*"
   ],
   "action": {
-    "default_popup": "popup.html"
+    "default_popup": "popup.html",
+    "default_title": "dotpush - push to GitHub"
+  },
+  "background": {
+    "service_worker": "background.js"
   }
 }

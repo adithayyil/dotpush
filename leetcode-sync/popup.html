@@ -1,25 +1,308 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>DotPush</title>
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        padding: 10px;
-        width: 150px;
-      }
-      button {
-        width: 100%;
-        padding: 5px;
-        font-size: 14px;
-        cursor: pointer;
-      }
-    </style>
-  </head>
-  <body>
+<head>
+  <meta charset="utf-8">
+  <title>Dotpush</title>
+  <style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
-    <button id="push-btn">Push?</button>
-    <script src="config.js"></script>
-    <script src="popup.js"></script>
-  </body>
+body {
+  width: 320px;
+  padding: 0;
+  font-family: 'JetBrains Mono', monospace;
+  background: #000000;
+  color: #ffffff;
+  margin: 0;
+  font-size: 13px;
+}
+
+.container {
+  background: #000000;
+  border: 2px solid #ffffff;
+  padding: 24px;
+  position: relative;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  gap: 12px;
+}
+
+.pixel-dot {
+  width: 32px;
+  height: 32px;
+  background: #ffffff;
+  position: relative;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+
+.pixel-dot::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  right: 4px;
+  bottom: 4px;
+  background: #000000;
+}
+
+.pixel-dot::after {
+  content: '';
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  background: #ffffff;
+}
+
+h1 {
+  font-size: 18px;
+  margin: 0;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: lowercase;
+}
+
+.view {
+  display: none;
+}
+
+.view:not(.hidden) {
+  display: block;
+}
+
+.auth-step {
+  text-align: center;
+  margin: 20px 0;
+}
+
+.user-info {
+  background: #ffffff;
+  color: #000000;
+  padding: 16px;
+  border: 2px solid #ffffff;
+  margin-bottom: 20px;
+  text-align: center;
+  font-weight: 500;
+}
+
+button {
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid #ffffff;
+  background: #000000;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  margin: 8px 0;
+  transition: all 0.15s ease;
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.primary-btn {
+  background: #ffffff;
+  color: #000000;
+  border: 2px solid #ffffff;
+}
+
+.primary-btn:hover:not(:disabled) {
+  background: #000000;
+  color: #ffffff;
+  box-shadow: inset 0 0 0 2px #ffffff;
+}
+
+.secondary-btn {
+  background: #000000;
+  color: #ffffff;
+  border: 2px solid #ffffff;
+}
+
+.secondary-btn:hover:not(:disabled) {
+  background: #ffffff;
+  color: #000000;
+}
+
+.danger-btn {
+  background: #000000;
+  color: #ffffff;
+  border: 2px solid #ffffff;
+  position: relative;
+}
+
+.danger-btn:hover:not(:disabled) {
+  background: #ffffff;
+  color: #000000;
+}
+
+.danger-btn::before {
+  content: '⚠';
+  margin-right: 8px;
+}
+
+.danger-btn.small-logout {
+  position: absolute;
+  top: 0;
+  right: 0;
+  padding: 4px 8px;
+  font-size: 10px;
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  cursor: pointer;
+  z-index: 10;
+  width: auto;
+  height: auto;
+}
+
+.danger-btn.small-logout:hover { text-decoration: underline; }
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.status {
+  padding: 12px;
+  border: 2px solid #ffffff;
+  margin: 12px 0;
+  font-size: 12px;
+  text-align: center;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status.success {
+  background: #ffffff;
+  color: #000000;
+}
+
+.status.success::before, .status.error::before, .status.info::before { content: ''; }
+
+.hidden {
+  display: none !important;
+}
+
+.description {
+  font-size: 12px;
+  text-align: center;
+  margin-bottom: 20px;
+  line-height: 1.5;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.auth-code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 24px;
+  font-weight: 700;
+  text-align: center;
+  background: #ffffff;
+  color: #000000;
+  padding: 16px;
+  border: 2px solid #ffffff;
+  margin: 16px 0;
+  letter-spacing: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.auth-code:hover {
+  background: #000000;
+  color: #ffffff;
+  box-shadow: inset 0 0 0 2px #ffffff;
+}
+
+.loading {
+  text-align: center;
+  font-size: 11px;
+  margin: 16px 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 500;
+}
+
+.loading::before {
+  content: '◐ ';
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Scanline effect */
+.container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(255, 255, 255, 0.03) 2px,
+    rgba(255, 255, 255, 0.03) 4px
+  );
+  pointer-events: none;
+}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">
+      <div class="pixel-dot"></div>
+      <h1>dotpush</h1>
+    </div>
+
+    <div id="authView" class="view">
+      <p class="description">
+        To start using Dotpush, please authenticate with your GitHub account.
+      </p>
+      <div class="auth-step">
+        <button id="authButton" class="primary-btn">
+          Authenticate with GitHub
+        </button>
+      </div>
+    </div>
+
+    <div id="codeView" class="view hidden">
+      <p class="description"><strong>Step&nbsp;1:</strong>&nbsp;Copy this code</p>
+      <div id="authCode" class="auth-code">Loading…</div>
+      <div class="auth-step">
+        <button id="openGitHubBtn" class="primary-btn">Step&nbsp;2: Open GitHub &amp; Enter Code</button>
+      </div>
+      <div class="description" style="font-size:10px;opacity:.8">You can close this popup—authentication continues in the background</div>
+    </div>
+
+    <div id="mainView" class="view hidden">
+      <div id="userInfo" class="user-info"></div>
+      <button id="syncButton" class="primary-btn">Push&nbsp;to&nbsp;GitHub</button>
+      <button id="logoutButton" class="danger-btn small-logout" title="Logout">Logout</button>
+      <div id="status" class="status info hidden"></div>
+    </div>
+
+    <div id="loadingView" class="view hidden">
+      <div class="loading">Loading...</div>
+    </div>
+  </div>
+  <script src="auth.js"></script>
+  <script src="popup.js"></script>
+</body>
 </html>
