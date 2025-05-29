@@ -149,16 +149,16 @@ const backgroundAuth = new BackgroundAuth();
 class IconManager {
   constructor() {
     this.activeIconPaths = {
-      "16": "icons/icon-16.png",
-      "32": "icons/icon-32.png", 
-      "48": "icons/icon-48.png",
+      "16": "icons/icon-128.png",
+      "32": "icons/icon-128.png", 
+      "48": "icons/icon-128.png",
       "128": "icons/icon-128.png"
     };
     
     this.inactiveIconPaths = {
-      "16": "icons/inactive-16.png",
-      "32": "icons/inactive-32.png",
-      "48": "icons/inactive-48.png", 
+      "16": "icons/inactive-128.png",
+      "32": "icons/inactive-128.png",
+      "48": "icons/inactive-128.png", 
       "128": "icons/inactive-128.png"
     };
   }
