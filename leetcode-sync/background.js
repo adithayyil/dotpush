@@ -122,7 +122,7 @@ class BackgroundAuth {
           },
           body: JSON.stringify({
             name: repoName,
-            description: "LeetCode solutions automatically synced from dotpush extension",
+            description: "LeetCode solutions automatically synced from dotpush extension - https://dotpush.ca/",
             private: false,
             auto_init: true
           })

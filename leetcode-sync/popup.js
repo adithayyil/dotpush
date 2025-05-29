@@ -314,16 +314,22 @@ chrome.runtime.onMessage.addListener(async (request, sender) => {
       authStatusEl.className = "status success";
     }
     
-    // Show logged in view after a brief delay so user can see the success message
-    setTimeout(() => {
-      showLoggedInView({
-        github_token: request.token,
-        github_username: request.userInfo.login,
-        github_user_info: request.userInfo
-      });
-      
-      showStatus('Successfully authenticated with GitHub!', 'success');
-    }, 1000);
+    // Wait a moment for background script to save auth data, then reload from storage
+    setTimeout(async () => {
+      const auth = await githubAuth.loadAuth();
+      if (auth.github_token && auth.github_username) {
+        showLoggedInView(auth);
+        showStatus('Successfully authenticated with GitHub!', 'success');
+      } else {
+        // Fallback if storage hasn't been updated yet
+        showLoggedInView({
+          github_token: request.token,
+          github_username: request.userInfo.login,
+          github_user_info: request.userInfo
+        });
+        showStatus('Successfully authenticated with GitHub!', 'success');
+      }
+    }, 1500);
   } else if (request.type === "error") {
     showStatus(request.message, 'error');
     
@@ -363,7 +369,7 @@ async function ensureRepositoryExists(token, username, repoName) {
         },
         body: JSON.stringify({
           name: repoName,
-          description: "LeetCode solutions automatically synced from dotpush extension",
+          description: "LeetCode solutions automatically synced from dotpush extension - https://dotpush.ca/",
           private: false,
           auto_init: true
         })
