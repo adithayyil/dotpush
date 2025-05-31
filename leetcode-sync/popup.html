@@ -375,6 +375,36 @@ body {
   background: rgba(255, 255, 255, 0.2);
   transform: translateY(-1px);
 }
+
+.repo-button {
+  width: 200px;
+  height: 36px;
+  background: linear-gradient(145deg, #1f6feb, #0969da);
+  border: none;
+  border-radius: 18px;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 8px;
+  box-shadow: 0 2px 8px rgba(15, 105, 218, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.repo-button:hover:not(:disabled) {
+  background: linear-gradient(145deg, #0969da, #1f6feb);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(15, 105, 218, 0.4);
+}
+
+.repo-button::before {
+  content: "📂";
+  font-size: 14px;
+}
   </style>
 </head>
 <body>
@@ -453,6 +483,10 @@ body {
         
         <button id="syncButton" class="push-button">
           PUSH TO GITHUB
+        </button>
+        
+        <button id="repoButton" class="repo-button hidden">
+          View File
         </button>
       </div>
       

@@ -7,6 +7,7 @@ const loadingView = document.getElementById('loadingView');
 const loginBtn = document.getElementById('authButton') || document.getElementById('login-btn');
 const pushBtn = document.getElementById('syncButton') || document.getElementById('push-btn');
 const logoutBtn = document.getElementById('logoutButton') || document.getElementById('logout-btn');
+const repoBtn = document.getElementById('repoButton');
 const copyBtn = document.getElementById('copyButton'); // may be null now
 const openGitHubBtn = document.getElementById('openGitHubBtn') || document.getElementById('openGitHubBtn');
 
@@ -22,6 +23,7 @@ const authStatusEl = document.getElementById('auth-status');
 let currentDeviceCode = null;
 let currentVerificationUri = null;
 let pollTimeout = null;
+let currentFileUrl = null;
 
 // Initialize popup
 document.addEventListener('DOMContentLoaded', async () => {
@@ -76,6 +78,11 @@ async function showLoggedInView(auth) {
 
   if (userInfoEl) {
     userInfoEl.textContent = `Logged in as: @${auth.github_username}`;
+  }
+  
+  // Hide repo button initially until a successful push
+  if (repoBtn) {
+    repoBtn.classList.add('hidden');
   }
 
   if (copyBtn && authCodeEl) {
@@ -169,6 +176,10 @@ if (openGitHubBtn) {
 // Logout button click handler
 if (logoutBtn) logoutBtn.addEventListener('click', async () => {
   await githubAuth.clearAuth();
+  currentFileUrl = null;
+  if (repoBtn) {
+    repoBtn.classList.add('hidden');
+  }
   showLoginView();
   showStatus('Successfully logged out', 'info');
 });
@@ -286,7 +297,7 @@ if (pushBtn) pushBtn.addEventListener('click', async () => {
     showStatus(`Failed to push code: ${error.message}`, 'error');
   } finally {
     pushBtn.disabled = false;
-    pushBtn.textContent = 'Push Solution';
+    pushBtn.textContent = 'PUSH TO GITHUB';
   }
 });
 
@@ -304,7 +315,7 @@ chrome.runtime.onMessage.addListener(async (request, sender) => {
     const pushBtn = document.getElementById('push-btn');
     if (pushBtn) {
       pushBtn.disabled = false;
-      pushBtn.textContent = 'Push Solution';
+      pushBtn.textContent = 'PUSH TO GITHUB';
     }
   } else if (request.type === "auth-complete") {
     
@@ -337,7 +348,7 @@ chrome.runtime.onMessage.addListener(async (request, sender) => {
     const pushBtn = document.getElementById('push-btn');
     if (pushBtn) {
       pushBtn.disabled = false;
-      pushBtn.textContent = 'Push Solution';
+      pushBtn.textContent = 'PUSH TO GITHUB';
     }
   }
 });
@@ -407,6 +418,9 @@ async function pushToGitHub(code, url, language = 'python') {
     const repoName = "leetcode-sync";
     const username = auth.github_username;
     
+    // Store the direct file URL for the repo button
+    currentFileUrl = `https://github.com/${username}/${repoName}/blob/main/${path}`;
+    
     // Ensure repository exists (create if it doesn't)
     const repoExists = await ensureRepositoryExists(auth.github_token, username, repoName);
     if (!repoExists) {
@@ -462,7 +476,11 @@ async function pushToGitHub(code, url, language = 'python') {
 
     const result = await putResponse.json();
     if (result.content) {
-      showStatus('pushing...', 'success!');
+      showStatus('Successfully pushed to GitHub!', 'success');
+      // Show the repo button after successful push
+      if (repoBtn) {
+        repoBtn.classList.remove('hidden');
+      }
     } else {
       showStatus(`Failed to push: ${result.message || 'Unknown error'}`, 'error');
     }
@@ -492,4 +510,13 @@ function getFileExtension(language) {
     swift: 'swift'
   };
   return map[language] || 'txt';
+}
+
+// Repo button click handler
+if (repoBtn) {
+  repoBtn.addEventListener('click', () => {
+    if (currentFileUrl) {
+      chrome.tabs.create({ url: currentFileUrl });
+    }
+  });
 }
