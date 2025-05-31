@@ -4,6 +4,10 @@ const codeView = document.getElementById('codeView');
 const mainView = document.getElementById('mainView');
 const loadingView = document.getElementById('loadingView');
 
+// New view for non-LeetCode pages
+const notLeetView = document.getElementById('notLeetView');
+const goLeetBtn = document.getElementById('goLeetBtn');
+
 const loginBtn = document.getElementById('authButton') || document.getElementById('login-btn');
 const pushBtn = document.getElementById('syncButton') || document.getElementById('push-btn');
 const logoutBtn = document.getElementById('logoutButton') || document.getElementById('logout-btn');
@@ -27,6 +31,24 @@ let currentFileUrl = null;
 
 // Initialize popup
 document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const onLeetCode = tab && tab.url && tab.url.includes('leetcode.com');
+
+    if (!onLeetCode) {
+      showNotLeetView();
+      // Optional: open leetcode when button clicked
+      if (goLeetBtn) {
+        goLeetBtn.addEventListener('click', () => {
+          chrome.tabs.update(tab.id, { url: 'https://leetcode.com/' });
+        });
+      }
+      return; // stop further init
+    }
+  } catch (e) {
+    // fallback
+  }
+
   await checkAuthStatus();
 });
 
@@ -55,7 +77,7 @@ async function checkAuthStatus() {
 
 // Helpers to toggle views
 function hideAllViews() {
-  [authView, codeView, mainView, loadingView].forEach(v => v && v.classList.add('hidden'));
+  [authView, codeView, mainView, loadingView, notLeetView].forEach(v => v && v.classList.add('hidden'));
 }
 
 function showLoginView() {
@@ -67,6 +89,12 @@ function showLoginView() {
 function showCodeView() {
   hideAllViews();
   if (codeView) codeView.classList.remove('hidden');
+}
+
+function showNotLeetView() {
+  hideAllViews();
+  if (notLeetView) notLeetView.classList.remove('hidden');
+  hideStatus();
 }
 
 // Setup functions removed - no longer needed with direct authentication
@@ -194,8 +222,16 @@ if (pushBtn) pushBtn.addEventListener('click', async () => {
     
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
     
-    if (!tabs[0].url.includes('leetcode.com')) {
-      showStatus('go to leetcode first', 'error');
+    const currentUrl = tabs[0].url || '';
+
+    // Require LeetCode problem page
+    if (!currentUrl.includes('leetcode.com')) {
+      showStatus('Go to LeetCode first', 'error');
+      return;
+    }
+
+    if (!/leetcode\.com\/problems\//.test(currentUrl)) {
+      showStatus('Open a specific LeetCode problem page before pushing', 'error');
       return;
     }
     
@@ -415,7 +451,7 @@ async function pushToGitHub(code, url, language = 'python') {
     const fileExtension = getFileExtension(language);
     const fileName = `${slug}.${fileExtension}`;
     const path = `leetcode/${fileName}`;
-    const repoName = "leetcode-sync";
+    const repoName = "code-sync";
     const username = auth.github_username;
     
     // Store the direct file URL for the repo button

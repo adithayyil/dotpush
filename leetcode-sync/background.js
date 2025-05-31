@@ -95,7 +95,7 @@ class BackgroundAuth {
   }
 
   async createLeetCodeRepository(token, username) {
-    const repoName = "leetcode-sync";
+    const repoName = "code-sync";
     const repoUrl = `https://api.github.com/repos/${username}/${repoName}`;
     
     try {
@@ -122,7 +122,7 @@ class BackgroundAuth {
           },
           body: JSON.stringify({
             name: repoName,
-            description: "LeetCode solutions automatically synced from dotpush extension - https://dotpush.ca/",
+            description: "Coding solutions automatically synced from dotpush extension - https://dotpush.ca/",
             private: false,
             auto_init: true
           })
