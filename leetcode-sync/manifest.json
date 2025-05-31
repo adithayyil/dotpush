@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "dotpush",
   "version": "1.0.2",
-  "description": "dotpush is a Chrome extension that seamlessly bridges your LeetCode practice with your GitHub portfolio. Never lose your coding solutions again - every problem you solve gets automatically pushed to your GitHub repository, building an impressive coding portfolio over time.",
+  "description": "dotpush auto-syncs your LeetCode solutions to GitHub, building your coding portfolio effortlessly.",
   "permissions": [
     "activeTab",
     "scripting",
