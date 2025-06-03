@@ -7,3 +7,17 @@ config.js
 
 # Bot folder - contains sensitive tokens
 bot/
+
+# macOS system files
+.DS_Store
+
+# Private keys / certificates
+private_key.pem
+public_key.pem
+
+# Chrome extension build artifacts
+*.crx
+*.zip
+
+# Misc generated folders
+unused/
