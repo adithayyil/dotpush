@@ -1,8 +1,15 @@
 // Background script for dotpush Extension
 // Handles OAuth authentication polling that persists when popup closes
 
-// Import API compatibility layer
-importScripts('api-compat.js');
+// Firefox compatibility: Check if importScripts is available
+if (typeof importScripts !== 'undefined') {
+  try {
+    // Import API compatibility layer
+    importScripts('api-compat.js');
+  } catch (e) {
+    console.error('Failed to import api-compat.js:', e);
+  }
+}
 
 class BackgroundAuth {
   constructor() {
@@ -250,13 +257,30 @@ browser.runtime.onStartup.addListener(async () => {
 
 // Listen for messages from popup
 browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  console.log('Background: Received message:', request.type);
+  
   if (request.type === 'start-oauth-polling') {
-    backgroundAuth.startPolling(request.deviceCode, request.clientId, request.interval);
-    sendResponse({ success: true });
+    try {
+      backgroundAuth.startPolling(request.deviceCode, request.clientId, request.interval);
+      console.log('Background: Started OAuth polling');
+      sendResponse({ success: true });
+    } catch (error) {
+      console.error('Background: Failed to start polling:', error);
+      sendResponse({ success: false, error: error.message });
+    }
+    return true; // Keep message channel open for async response
   } else if (request.type === 'stop-oauth-polling') {
-    backgroundAuth.stopPolling();
-    sendResponse({ success: true });
+    try {
+      backgroundAuth.stopPolling();
+      console.log('Background: Stopped OAuth polling');
+      sendResponse({ success: true });
+    } catch (error) {
+      console.error('Background: Failed to stop polling:', error);
+      sendResponse({ success: false, error: error.message });
+    }
+    return true; // Keep message channel open for async response
   }
   
-  return true; // Keep message channel open
+  // For unknown message types, return false (don't keep channel open)
+  return false;
 }); 

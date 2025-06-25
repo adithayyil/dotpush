@@ -167,7 +167,32 @@ async function buildForBrowser(browserName) {
     await processManifest(config);
     
     // Add webextension-polyfill for Firefox
-    await addWebExtensionPolyfill(config);
+    if (config.needsPolyfill) {
+      await addWebExtensionPolyfill(config);
+      
+      // Modify background.js to import the polyfill for Firefox
+      const backgroundPath = path.join(config.outputDir, 'background.js');
+      if (await fs.pathExists(backgroundPath)) {
+        let backgroundContent = await fs.readFile(backgroundPath, 'utf8');
+        
+        // Add polyfill import at the top for Firefox
+        const polyfillImport = `// Firefox polyfill import
+if (typeof importScripts !== 'undefined') {
+  try {
+    importScripts('browser-polyfill.js');
+  } catch (e) {
+    console.error('Failed to import browser-polyfill:', e);
+  }
+}
+
+`;
+        if (!backgroundContent.includes('browser-polyfill.js')) {
+          backgroundContent = polyfillImport + backgroundContent;
+          await fs.writeFile(backgroundPath, backgroundContent);
+          console.log('✓ Added polyfill import to background.js');
+        }
+      }
+    }
     
     // Validate build
     const isValid = await validateBuild(config);

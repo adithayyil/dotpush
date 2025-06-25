@@ -20,6 +20,7 @@ const logoutBtn = document.getElementById('logoutButton') || document.getElement
 const repoBtn = document.getElementById('repoButton');
 const copyBtn = document.getElementById('copyButton'); // may be null now
 const openGitHubBtn = document.getElementById('openGitHubBtn') || document.getElementById('openGitHubBtn');
+const forceCheckAuthBtn = document.getElementById('forceCheckAuthBtn');
 
 const authCodeEl = document.getElementById('authCode') || document.getElementById('auth-code');
 const userInfoEl = document.getElementById('userInfo') || document.getElementById('user-info');
@@ -58,41 +59,133 @@ document.addEventListener('DOMContentLoaded', async () => {
   await checkAuthStatus();
 });
 
+// Firefox: Also check auth when popup gains focus (user might have completed auth in another tab)
+window.addEventListener('focus', async () => {
+  console.log('Popup gained focus, checking auth status...');
+  await checkAuthStatus();
+});
+
+// Firefox: Check auth status immediately on popup load
+setTimeout(async () => {
+  console.log('Additional auth check after 1 second...');
+  await checkAuthStatus();
+}, 1000);
+
 // Check if user is already authenticated
 async function checkAuthStatus() {
+  console.log('=== CHECKING AUTH STATUS ===');
   try {
-    const auth = await githubAuth.loadAuth();
+    // Try multiple methods to load auth data
+    let auth = null;
     
-    if (auth.github_token && auth.github_username) {
-      // Validate token
-      const isValid = await githubAuth.validateToken(auth.github_token);
-      if (isValid) {
-        showLoggedInView(auth);
-        return;
-      } else {
-        // Token expired, clear it
-        await githubAuth.clearAuth();
+    // Method 1: Use githubAuth.loadAuth()
+    try {
+      auth = await githubAuth.loadAuth();
+      console.log('Method 1 (githubAuth.loadAuth):', !!auth.github_token);
+    } catch (e) {
+      console.log('Method 1 failed:', e);
+    }
+    
+    // Method 2: Direct storage.sync access
+    if (!auth || !auth.github_token) {
+      try {
+        auth = await browser.storage.sync.get(['github_token', 'github_username', 'github_user_info']);
+        console.log('Method 2 (storage.sync):', !!auth.github_token);
+      } catch (e) {
+        console.log('Method 2 failed:', e);
       }
     }
     
+    // Method 3: Direct storage.local access
+    if (!auth || !auth.github_token) {
+      try {
+        auth = await browser.storage.local.get(['github_token', 'github_username', 'github_user_info']);
+        console.log('Method 3 (storage.local):', !!auth.github_token);
+      } catch (e) {
+        console.log('Method 3 failed:', e);
+      }
+    }
+    
+    console.log('Final auth object:', {
+      hasToken: !!auth.github_token,
+      hasUsername: !!auth.github_username,
+      tokenStart: auth.github_token ? auth.github_token.substring(0, 10) + '...' : 'none',
+      username: auth.github_username || 'none'
+    });
+    
+    if (auth.github_token && auth.github_username) {
+      console.log('Auth data found, validating token...');
+      // Validate token
+      const isValid = await githubAuth.validateToken(auth.github_token);
+      console.log('Token validation result:', isValid);
+      
+      if (isValid) {
+        console.log('Token valid! Showing logged in view');
+        showLoggedInView(auth);
+        return;
+      } else {
+        console.log('Token expired, clearing auth');
+        // Token expired, clear it
+        await githubAuth.clearAuth();
+      }
+    } else {
+      console.log('No valid auth data found');
+    }
+    
+    console.log('Showing login view');
     showLoginView();
   } catch (error) {
     console.error('Auth check failed:', error);
     showLoginView();
   }
+  
+  console.log('=== AUTH CHECK COMPLETE ===');
 }
 
 // Firefox-specific: Periodically check for auth completion
 function startAuthPolling() {
   console.log('Starting auth polling for Firefox compatibility');
+  let pollCount = 0;
+  const maxPolls = 150; // 5 minutes at 2-second intervals
+  
   const pollInterval = setInterval(async () => {
+    pollCount++;
+    console.log(`Auth polling attempt ${pollCount}/${maxPolls}`);
+    
     try {
-      console.log('Checking auth status...');
-      const auth = await githubAuth.loadAuth();
-      if (auth.github_token && auth.github_username) {
-        console.log('Auth found! Validating token...');
+      // Check both storage types aggressively
+      let auth = null;
+      
+      // Try storage.sync
+      try {
+        auth = await browser.storage.sync.get(['github_token', 'github_username', 'github_user_info']);
+        if (auth.github_token) {
+          console.log('Found auth in storage.sync');
+        }
+      } catch (syncError) {
+        console.log('Storage.sync failed, trying local:', syncError);
+      }
+      
+      // If not found in sync, try local
+      if (!auth || !auth.github_token) {
+        try {
+          auth = await browser.storage.local.get(['github_token', 'github_username', 'github_user_info']);
+          if (auth.github_token) {
+            console.log('Found auth in storage.local');
+          }
+        } catch (localError) {
+          console.log('Storage.local also failed:', localError);
+        }
+      }
+      
+      if (auth && auth.github_token && auth.github_username) {
+        console.log('Auth found! Token:', auth.github_token.substring(0, 10) + '...', 'Username:', auth.github_username);
         clearInterval(pollInterval);
+        
+        // Validate token
         const isValid = await githubAuth.validateToken(auth.github_token);
+        console.log('Token validation result:', isValid);
+        
         if (isValid) {
           console.log('Token valid! Showing logged in view');
           showLoggedInView(auth);
@@ -100,19 +193,93 @@ function startAuthPolling() {
         } else {
           console.log('Token invalid, clearing auth');
           await githubAuth.clearAuth();
+          showStatus('Authentication expired. Please try again.', 'error');
+          showLoginView();
         }
+      } else {
+        console.log('No auth found yet, continuing polling...');
       }
     } catch (error) {
-      console.log('Auth polling error:', error);
-      // Continue polling
+      console.error('Auth polling error:', error);
+      // Continue polling despite errors
+    }
+    
+    // Stop after max attempts
+    if (pollCount >= maxPolls) {
+      console.log('Auth polling timeout reached');
+      clearInterval(pollInterval);
+      showStatus('Authentication timed out. Please try again.', 'warning');
     }
   }, 2000); // Check every 2 seconds
+}
+
+// Direct OAuth polling when background script fails
+function startDirectOAuthPolling(deviceCode, clientId, interval = 5) {
+  console.log('Starting direct OAuth polling (background script failed)');
   
-  // Stop polling after 5 minutes
-  setTimeout(() => {
-    console.log('Auth polling timeout reached');
-    clearInterval(pollInterval);
-  }, 5 * 60 * 1000);
+  const poll = async () => {
+    try {
+      const response = await fetch("https://github.com/login/oauth/access_token", {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: `client_id=${clientId}&device_code=${deviceCode}&grant_type=urn:ietf:params:oauth:grant-type:device_code`
+      });
+
+      const data = await response.json();
+
+      if (data.access_token) {
+        console.log('Direct OAuth: Token received successfully');
+        
+        // Get user info
+        const userResponse = await fetch("https://api.github.com/user", {
+          headers: {
+            "Authorization": `Bearer ${data.access_token}`,
+            "User-Agent": "dotpush-Extension"
+          }
+        });
+        
+        if (userResponse.ok) {
+          const userInfo = await userResponse.json();
+          console.log('Direct OAuth: User info retrieved:', userInfo.login);
+          
+          // Save authentication data
+          const authData = {
+            github_token: data.access_token,
+            github_username: userInfo.login,
+            github_user_info: userInfo
+          };
+          
+          try {
+            await browser.storage.sync.set(authData);
+            console.log('Direct OAuth: Auth saved to storage.sync');
+          } catch (syncError) {
+            console.warn('Direct OAuth: Storage.sync failed, using storage.local:', syncError);
+            await browser.storage.local.set(authData);
+            console.log('Direct OAuth: Auth saved to storage.local');
+          }
+          
+          // Show logged in view immediately
+          showLoggedInView(authData);
+          showStatus('Successfully authenticated with GitHub!', 'success');
+        }
+      } else if (data.error === "authorization_pending") {
+        setTimeout(poll, interval * 1000);
+      } else if (data.error === "slow_down") {
+        setTimeout(poll, (interval + 5) * 1000);
+      } else {
+        console.error('OAuth error:', data.error);
+      }
+    } catch (error) {
+      console.error('Direct OAuth polling error:', error);
+      setTimeout(poll, interval * 1000); // Retry on error
+    }
+  };
+
+  // Start polling
+  poll();
 }
 
 // Helpers to toggle views
@@ -208,14 +375,18 @@ loginBtn.addEventListener('click', async () => {
 
     // Start polling in background script (persists when popup closes)
     try {
-      browser.runtime.sendMessage({
+      console.log('Sending start-oauth-polling message to background...');
+      const response = await browser.runtime.sendMessage({
         type: 'start-oauth-polling',
         deviceCode: deviceFlow.device_code,
         clientId: githubAuth.getClientId(),
         interval: deviceFlow.interval
       });
+      console.log('Background response:', response);
     } catch (msgError) {
       console.warn('Background message failed (continuing with local polling):', msgError);
+      // If background script fails, start our own OAuth polling
+      startDirectOAuthPolling(deviceFlow.device_code, githubAuth.getClientId(), deviceFlow.interval);
     }
     
     // Start local polling for Firefox compatibility
@@ -552,6 +723,26 @@ browser.runtime.onMessage.addListener(async (request, sender) => {
     }
   }
 });
+
+// Force check auth button click handler
+if (forceCheckAuthBtn) {
+  forceCheckAuthBtn.addEventListener('click', async () => {
+    console.log('Force checking auth status...');
+    forceCheckAuthBtn.textContent = 'Checking...';
+    forceCheckAuthBtn.disabled = true;
+    
+    try {
+      await checkAuthStatus();
+      showStatus('Auth status checked', 'info');
+    } catch (error) {
+      console.error('Force auth check failed:', error);
+      showStatus('Check failed: ' + error.message, 'error');
+    } finally {
+      forceCheckAuthBtn.textContent = 'Check Auth Status';
+      forceCheckAuthBtn.disabled = false;
+    }
+  });
+}
 
 // Auto-create repository if it doesn't exist
 async function ensureRepositoryExists(token, username, repoName) {
