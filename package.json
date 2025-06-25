@@ -1,0 +1,36 @@
+{
+  "name": "dotpush",
+  "version": "1.0.2",
+  "description": "Cross-browser extension for syncing LeetCode solutions to GitHub",
+  "scripts": {
+    "build": "node build/build.js",
+    "build:chrome": "node build/build.js chrome",
+    "build:firefox": "node build/build.js firefox",
+    "build:all": "npm run build:chrome && npm run build:firefox",
+    "dev:chrome": "npm run build:chrome && web-ext run --source-dir=chrome --target=chromium",
+    "dev:firefox": "npm run build:firefox && web-ext run --source-dir=firefox --target=firefox-desktop",
+    "package:chrome": "npm run build:chrome && mkdir -p dist && cd chrome && zip -r ../dist/dotpush-chrome.zip .",
+    "package:firefox": "npm run build:firefox && mkdir -p dist && cd firefox && zip -r ../dist/dotpush-firefox.zip .",
+    "package:all": "mkdir -p dist && npm run package:chrome && npm run package:firefox",
+    "validate": "node build/validate.js",
+    "lint": "web-ext lint --source-dir=chrome && web-ext lint --source-dir=firefox",
+    "test": "npm run build && npm run validate"
+  },
+  "devDependencies": {
+    "web-ext": "^7.8.0",
+    "fs-extra": "^11.1.1"
+  },
+  "dependencies": {
+    "webextension-polyfill": "^0.10.0"
+  },
+  "keywords": [
+    "browser-extension",
+    "leetcode",
+    "github",
+    "sync",
+    "chrome",
+    "firefox"
+  ],
+  "author": "dotpush",
+  "license": "MIT"
+}

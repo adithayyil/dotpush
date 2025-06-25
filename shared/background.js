@@ -1,6 +1,9 @@
 // Background script for dotpush Extension
 // Handles OAuth authentication polling that persists when popup closes
 
+// Import API compatibility layer
+importScripts('api-compat.js');
+
 class BackgroundAuth {
   constructor() {
     this.polling = false;
@@ -31,6 +34,7 @@ class BackgroundAuth {
         const data = await response.json();
 
         if (data.access_token) {
+          console.log('Background: OAuth token received successfully');
           
           // Get user info
           const userResponse = await fetch("https://api.github.com/user", {
@@ -42,16 +46,32 @@ class BackgroundAuth {
           
           if (userResponse.ok) {
             const userInfo = await userResponse.json();
+            console.log('Background: User info retrieved:', userInfo.login);
             
             // Auto-create leetcode-sync repository
             await this.createLeetCodeRepository(data.access_token, userInfo.login);
             
-            // Save authentication
-            await chrome.storage.sync.set({
-              github_token: data.access_token,
-              github_username: userInfo.login,
-              github_user_info: userInfo
-            });
+            // Save authentication with better Firefox compatibility
+            try {
+              const authData = {
+                github_token: data.access_token,
+                github_username: userInfo.login,
+                github_user_info: userInfo
+              };
+              
+              console.log('Background: Saving auth data...');
+              // Try storage.sync first, fallback to storage.local
+              try {
+                await browser.storage.sync.set(authData);
+                console.log('Background: Auth saved to storage.sync');
+              } catch (syncError) {
+                console.warn('Background: Storage.sync failed, using storage.local:', syncError);
+                await browser.storage.local.set(authData);
+                console.log('Background: Auth saved to storage.local');
+              }
+            } catch (storageError) {
+              console.error('Background: Failed to save auth:', storageError);
+            }
             
             // Notify popup if it's open
             this.notifyAuthComplete(data.access_token, userInfo);
@@ -84,14 +104,24 @@ class BackgroundAuth {
 
   // Notify popup of completed authentication
   notifyAuthComplete(token, userInfo) {
-    // Send message to popup if it's listening
-    chrome.runtime.sendMessage({
-      type: 'auth-complete',
-      token: token,
-      userInfo: userInfo
-    }).catch(() => {
-      // Popup might be closed, that's OK
-    });
+    // Firefox messaging needs more robust error handling
+    try {
+      const message = {
+        type: 'auth-complete',
+        token: token,
+        userInfo: userInfo
+      };
+      
+      // Try to send message with proper error handling
+      if (browser.runtime.sendMessage) {
+        browser.runtime.sendMessage(message).catch((error) => {
+          // Common in Firefox when popup is closed - not an error
+          console.log('Popup not listening (normal):', error.message);
+        });
+      }
+    } catch (error) {
+      console.log('Message sending failed (normal when popup closed):', error);
+    }
   }
 
   async createLeetCodeRepository(token, username) {
@@ -168,13 +198,13 @@ class IconManager {
     const isLeetCode = url && url.includes('leetcode.com');
     
     try {
-      await chrome.action.setIcon({
+      await ExtensionAPI.setIcon({
         tabId: tabId,
         path: isLeetCode ? this.activeIconPaths : this.inactiveIconPaths
       });
       
       // Update title to reflect state
-      await chrome.action.setTitle({
+      await ExtensionAPI.setTitle({
         tabId: tabId,
         title: isLeetCode ? 
           "dotpush - Ready to sync!" : 
@@ -189,7 +219,7 @@ class IconManager {
 const iconManager = new IconManager();
 
 // Listen for tab updates to change icon state
-chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   // Only update when the page has finished loading or URL changed
   if (changeInfo.status === 'complete' || changeInfo.url) {
     await iconManager.updateIcon(tabId, tab.url);
@@ -197,9 +227,9 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 });
 
 // Listen for tab activation (when user switches tabs)
-chrome.tabs.onActivated.addListener(async (activeInfo) => {
+browser.tabs.onActivated.addListener(async (activeInfo) => {
   try {
-    const tab = await chrome.tabs.get(activeInfo.tabId);
+    const tab = await browser.tabs.get(activeInfo.tabId);
     await iconManager.updateIcon(activeInfo.tabId, tab.url);
   } catch (error) {
     // Ignore errors in production
@@ -207,9 +237,9 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
 });
 
 // Set initial icon state when extension starts
-chrome.runtime.onStartup.addListener(async () => {
+browser.runtime.onStartup.addListener(async () => {
   try {
-    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    const tabs = await ExtensionAPI.queryTabs({ active: true, currentWindow: true });
     if (tabs[0]) {
       await iconManager.updateIcon(tabs[0].id, tabs[0].url);
     }
@@ -219,7 +249,7 @@ chrome.runtime.onStartup.addListener(async () => {
 });
 
 // Listen for messages from popup
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === 'start-oauth-polling') {
     backgroundAuth.startPolling(request.deviceCode, request.clientId, request.interval);
     sendResponse({ success: true });

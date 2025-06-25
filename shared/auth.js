@@ -1,6 +1,11 @@
 // GitHub Device Flow OAuth for dotpush Extension
 // This provides a user-friendly way to authenticate without client secrets
 
+// Import API compatibility layer
+if (typeof browser === 'undefined' && typeof chrome !== 'undefined') {
+  globalThis.browser = chrome;
+}
+
 class GitHubAuth {
   constructor() {
     this.clientId = "Ov23liF5VVlXCN41NE79";
@@ -22,21 +27,24 @@ class GitHubAuth {
 
     // Check if we have the necessary permissions
     try {
-      const hasPermissions = await chrome.permissions.contains({
-        origins: ["https://github.com/*"]
-      });
-      
-      if (!hasPermissions) {
-        const granted = await chrome.permissions.request({
+      // Note: Firefox doesn't have runtime permissions API like Chrome
+      if (browser.permissions && browser.permissions.contains) {
+        const hasPermissions = await browser.permissions.contains({
           origins: ["https://github.com/*"]
         });
         
-        if (!granted) {
-          throw new Error("GitHub permissions not granted. Please allow access to GitHub.");
+        if (!hasPermissions) {
+          const granted = await browser.permissions.request({
+            origins: ["https://github.com/*"]
+          });
+          
+          if (!granted) {
+            throw new Error("GitHub permissions not granted. Please allow access to GitHub.");
+          }
         }
       }
     } catch (permError) {
-      // Continue anyway - might be in development mode
+      // Continue anyway - might be in development mode or Firefox
     }
 
     try {
@@ -132,29 +140,69 @@ class GitHubAuth {
     }
   }
 
-  // Save token and user info to Chrome storage
+  // Save token and user info to browser storage
   async saveAuth(token, userInfo) {
-    return new Promise((resolve) => {
-      chrome.storage.sync.set({
+    try {
+      // Use both storage.sync and storage.local for Firefox compatibility
+      const authData = {
         github_token: token,
         github_username: userInfo.login,
         github_user_info: userInfo
-      }, resolve);
-    });
+      };
+      
+      // Try storage.sync first (preferred)
+      try {
+        await browser.storage.sync.set(authData);
+      } catch (syncError) {
+        // Fallback to storage.local if sync fails (common in Firefox)
+        console.warn('Storage.sync failed, using storage.local:', syncError);
+        await browser.storage.local.set(authData);
+      }
+    } catch (error) {
+      console.error('Failed to save auth:', error);
+      throw error;
+    }
   }
 
   // Load saved authentication
   async loadAuth() {
-    return new Promise((resolve) => {
-      chrome.storage.sync.get(['github_token', 'github_username', 'github_user_info'], resolve);
-    });
+    try {
+      let result;
+      // Try storage.sync first
+      try {
+        result = await browser.storage.sync.get(['github_token', 'github_username', 'github_user_info']);
+        console.log('Auth: Loaded from storage.sync:', !!result.github_token);
+      } catch (syncError) {
+        // Fallback to storage.local
+        console.warn('Storage.sync get failed, using storage.local:', syncError);
+        result = await browser.storage.local.get(['github_token', 'github_username', 'github_user_info']);
+        console.log('Auth: Loaded from storage.local:', !!result.github_token);
+      }
+      return result || {};
+    } catch (error) {
+      console.error('Failed to load auth:', error);
+      return {};
+    }
   }
 
   // Clear saved authentication
   async clearAuth() {
-    return new Promise((resolve) => {
-      chrome.storage.sync.remove(['github_token', 'github_username', 'github_user_info'], resolve);
-    });
+    try {
+      const keys = ['github_token', 'github_username', 'github_user_info'];
+      // Clear from both storage types
+      try {
+        await browser.storage.sync.remove(keys);
+      } catch (syncError) {
+        console.warn('Storage.sync remove failed:', syncError);
+      }
+      try {
+        await browser.storage.local.remove(keys);
+      } catch (localError) {
+        console.warn('Storage.local remove failed:', localError);
+      }
+    } catch (error) {
+      console.error('Failed to clear auth:', error);
+    }
   }
 
   // Check if token is still valid

@@ -1,0 +1,46 @@
+{
+  "manifest_version": 2,
+  "name": "dotpush",
+  "version": "1.0.2",
+  "description": "dotpush auto-syncs your LeetCode solutions to GitHub, building your coding portfolio effortlessly.",
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "storage",
+    "https://leetcode.com/*",
+    "https://api.github.com/*",
+    "https://github.com/*"
+  ],
+  "browser_action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/inactive-128.png",
+      "32": "icons/inactive-128.png",
+      "48": "icons/inactive-128.png",
+      "128": "icons/inactive-128.png"
+    },
+    "default_title": "dotpush - Sync LeetCode to GitHub"
+  },
+  "background": {
+    "scripts": ["background.js"],
+    "persistent": true
+  },
+  "icons": {
+    "16": "icons/inactive-128.png",
+    "32": "icons/inactive-128.png",
+    "48": "icons/inactive-128.png",
+    "128": "icons/inactive-128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://leetcode.com/*"],
+      "js": ["content.js"]
+    }
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "dotpush@extension.com",
+      "strict_min_version": "91.0"
+    }
+  }
+}

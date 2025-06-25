@@ -19,5 +19,13 @@ public_key.pem
 *.crx
 *.zip
 
+# Cross-browser build system
+node_modules/
+chrome/
+firefox/
+dist/
+web-ext-artifacts/
+firefox-profile/
+
 # Misc generated folders
 unused/
